@@ -71,17 +71,55 @@ def init_session_state():
 
 init_session_state()
 
-_LOGO = Path(__file__).parent / "assets" / "bowman_logo.png"
-if _LOGO.exists():
-    st.image(str(_LOGO), width=280)
+_PAGES = Path(__file__).parent / "pages"
 
-st.title("Solar Pile Optimization & Report Kit")
-st.caption("Axial capacity \u00b7 Lateral analysis \u00b7 p-y curves \u00b7 Group effects \u00b7 FEM (BNWF) \u00b7 ASCE 7 load combinations")
 
-st.markdown("---")
-st.markdown(
-    "Use the **sidebar pages** to input project data and run analyses. "
-    "Start with **Project Setup**, then work through each page sequentially."
+def _home():
+    _LOGO = Path(__file__).parent / "assets" / "bowman_logo.png"
+    if _LOGO.exists():
+        st.image(str(_LOGO), width=280)
+
+    st.title("Solar Pile Optimization & Report Kit")
+    st.caption(
+        "Axial capacity \u00b7 Lateral analysis \u00b7 p-y curves \u00b7 "
+        "Group effects \u00b7 FEM (BNWF) \u00b7 ASCE 7 load combinations"
+    )
+
+    st.markdown("---")
+    st.markdown(
+        "Use the **sidebar** to navigate. "
+        "Start with the **Inputs** section, then review results in **Analysis**."
+    )
+
+
+pg = st.navigation(
+    {
+        "": [
+            st.Page(_home, title="Home", icon="\u2693"),
+        ],
+        "Inputs": [
+            st.Page(str(_PAGES / "01_Project_Setup.py"), title="Project Setup", icon="\ud83d\udcc1"),
+            st.Page(str(_PAGES / "02_Soil_Profile.py"), title="Soil Profile", icon="\ud83e\udea8"),
+            st.Page(str(_PAGES / "03_Pile_Properties.py"), title="Pile Properties", icon="\ud83d\udd29"),
+            st.Page(str(_PAGES / "04_Loading.py"), title="Loading", icon="\u2696\ufe0f"),
+        ],
+        "Design": [
+            st.Page(str(_PAGES / "05_Pile_Optimization.py"), title="Pile Optimization", icon="\ud83c\udfaf"),
+        ],
+        "Analysis": [
+            st.Page(str(_PAGES / "06_Axial_Capacity.py"), title="Axial Capacity", icon="\u2b07\ufe0f"),
+            st.Page(str(_PAGES / "07_Lateral_Analysis.py"), title="Lateral Analysis", icon="\u2194\ufe0f"),
+            st.Page(str(_PAGES / "08_Group_Analysis.py"), title="Group Analysis", icon="\ud83d\udd36"),
+            st.Page(str(_PAGES / "09_FEM_Analysis.py"), title="FEM Analysis", icon="\ud83d\udcca"),
+        ],
+        "Checks": [
+            st.Page(str(_PAGES / "11_Structural_Check.py"), title="Structural Check", icon="\ud83c\udfd7\ufe0f"),
+            st.Page(str(_PAGES / "12_Liquefaction.py"), title="Liquefaction", icon="\ud83c\udf0a"),
+            st.Page(str(_PAGES / "13_Installation_QC.py"), title="Installation QC", icon="\ud83d\udd28"),
+        ],
+        "Output": [
+            st.Page(str(_PAGES / "14_Export_Report.py"), title="Export Report", icon="\ud83d\udcc4"),
+        ],
+    }
 )
-
-st.sidebar.success("Select a page above to begin.")
+pg.run()
