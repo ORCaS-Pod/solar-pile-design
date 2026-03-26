@@ -14,6 +14,12 @@ from core.axial import axial_capacity
 
 st.header("Axial Capacity Analysis")
 
+if st.session_state.get("optimizer_applied") and st.session_state.get("axial_result"):
+    st.info(
+        "\\* Results below were auto-populated by the **Pile Optimizer**. "
+        "Click **Run Axial Analysis** to recalculate with current inputs."
+    )
+
 # Check prerequisites
 if not st.session_state.get("soil_layers"):
     st.warning("Define soil layers on the Soil Profile page first.")

@@ -195,6 +195,8 @@ if st.button("Run Optimization Sweep", type="primary"):
             st.session_state["axial_result"] = o.axial_result
         if o.lateral_result is not None:
             st.session_state["lateral_result"] = o.lateral_result
+        # Flag so downstream pages can indicate auto-populated values
+        st.session_state["optimizer_applied"] = True
 
 # ============================================================================
 # Results Display

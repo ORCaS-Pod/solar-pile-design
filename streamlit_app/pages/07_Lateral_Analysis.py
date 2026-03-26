@@ -16,6 +16,12 @@ from core.lateral import solve_lateral, broms_cohesionless, broms_cohesive, gene
 
 st.header("Lateral Load Analysis")
 
+if st.session_state.get("optimizer_applied") and st.session_state.get("lateral_result"):
+    st.info(
+        "\\* Results below were auto-populated by the **Pile Optimizer**. "
+        "Click **Run Lateral Analysis** to recalculate with current inputs."
+    )
+
 # Check prerequisites
 if not st.session_state.get("soil_layers"):
     st.warning("Define soil layers on the Soil Profile page first.")

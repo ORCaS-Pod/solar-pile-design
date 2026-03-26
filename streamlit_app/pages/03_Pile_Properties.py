@@ -15,16 +15,25 @@ from core.sections import (
 
 st.header("Pile Properties")
 
+if st.session_state.get("optimizer_applied"):
+    st.info(
+        "\\* Values below were auto-populated by the **Pile Optimizer**. "
+        "Editing any value here will override the optimizer selection."
+    )
+
 col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Section Selection")
+    _prev_section = st.session_state.get("pile_section", "W6x9")
     section_name = st.selectbox(
-        "Steel Section",
+        "Steel Section" + (" \\*" if st.session_state.get("optimizer_applied") else ""),
         list_sections(),
-        index=list_sections().index(st.session_state.get("pile_section", "W6x9")),
+        index=list_sections().index(_prev_section),
     )
     st.session_state.pile_section = section_name
+    if section_name != _prev_section:
+        st.session_state.pop("optimizer_applied", None)
 
     nominal = get_section(section_name)
     # Apply user-selected steel grade
@@ -56,14 +65,17 @@ with col1:
 with col2:
     st.subheader("Installation & Geometry")
 
+    _prev_embed = st.session_state.get("pile_embedment", 10.0)
     st.session_state.pile_embedment = st.number_input(
-        "Embedment Depth (ft)",
+        "Embedment Depth (ft)" + (" \\*" if st.session_state.get("optimizer_applied") else ""),
         min_value=1.0, max_value=50.0,
-        value=st.session_state.get("pile_embedment", 10.0),
+        value=_prev_embed,
         step=0.5, format="%.1f",
     )
     if st.session_state.pile_embedment is None:
         st.session_state.pile_embedment = 10.0
+    if st.session_state.pile_embedment != _prev_embed:
+        st.session_state.pop("optimizer_applied", None)
 
     st.session_state.pile_type = st.selectbox(
         "Installation Method",
