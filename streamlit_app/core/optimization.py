@@ -59,6 +59,10 @@ class OptimizationCandidate:
     lateral_converged: bool = True
     notes: list[str] = field(default_factory=list)
 
+    # Full analysis result objects (stored for the optimal candidate)
+    axial_result: object | None = None
+    lateral_result: object | None = None
+
 
 @dataclass
 class OptimizationResult:
@@ -233,6 +237,8 @@ def run_optimization_sweep(
 
             notes: list[str] = []
             total_weight = active_sec.weight * emb
+            ax = None  # will hold AxialResult if successful
+            lat = None  # will hold LateralResult if successful
 
             # --- Axial analysis ---
             try:
@@ -347,6 +353,8 @@ def run_optimization_sweep(
                     dcr_map.append((999.0, "Min Embedment"))
                 governing = max(dcr_map, key=lambda x: x[0])[1]
 
+            # Keep full result objects for downstream pages
+
             candidates.append(OptimizationCandidate(
                 section_name=sec.name,
                 embedment_ft=emb,
@@ -372,6 +380,8 @@ def run_optimization_sweep(
                 governing_check=governing,
                 lateral_converged=lat_converged,
                 notes=notes,
+                axial_result=ax,
+                lateral_result=lat,
             ))
 
     # Find optimal (lightest passing, then shallowest embedment)

@@ -179,6 +179,23 @@ if st.button("Run Optimization Sweep", type="primary"):
     progress_bar.progress(1.0, text=f"Complete! ({opt_result.sweep_time_seconds:.1f}s)")
     st.session_state["optimization_result"] = opt_result
 
+    # Auto-apply optimal design to project
+    if opt_result.optimal:
+        o = opt_result.optimal
+        st.session_state.pile_section = o.section_name
+        st.session_state.pile_embedment = o.embedment_ft
+        nominal = get_section(o.section_name)
+        st.session_state["nominal_section"] = nominal
+        if t_loss > 0:
+            st.session_state["section"] = corroded_section(nominal, t_loss)
+        else:
+            st.session_state["section"] = nominal
+        # Store analysis results for downstream pages (06, 07)
+        if o.axial_result is not None:
+            st.session_state["axial_result"] = o.axial_result
+        if o.lateral_result is not None:
+            st.session_state["lateral_result"] = o.lateral_result
+
 # ============================================================================
 # Results Display
 # ============================================================================
@@ -301,29 +318,12 @@ if "optimization_result" in st.session_state:
     df = pd.DataFrame(table_data)
     st.dataframe(df, width="stretch", hide_index=True)
 
-    # --- Apply Optimal Design ---
+    # --- Applied Design Confirmation ---
     if opt.optimal:
         st.markdown("---")
-        st.subheader("Apply Optimal Design")
-        st.markdown(
-            f"Apply **{opt.optimal.section_name}** at "
-            f"**{opt.optimal.embedment_ft:.1f} ft** embedment to the project. "
-            f"Downstream analysis pages will automatically use this selection."
+        st.info(
+            f"**Auto-applied:** {opt.optimal.section_name} at "
+            f"{opt.optimal.embedment_ft:.1f} ft embedment has been set as the "
+            f"active design. Axial and Lateral analysis results are available on "
+            f"the Analysis pages."
         )
-        if st.button("Apply Optimal Design to Project", type="primary"):
-            st.session_state.pile_section = opt.optimal.section_name
-            st.session_state.pile_embedment = opt.optimal.embedment_ft
-            nominal = get_section(opt.optimal.section_name)
-            st.session_state["nominal_section"] = nominal
-            t_loss = 0.0
-            if st.session_state.get("corrosion_enabled"):
-                t_loss = st.session_state.get("corrosion_t_loss", 0.0)
-            if t_loss > 0:
-                st.session_state["section"] = corroded_section(nominal, t_loss)
-            else:
-                st.session_state["section"] = nominal
-            st.success(
-                f"Applied **{opt.optimal.section_name}** at "
-                f"**{opt.optimal.embedment_ft:.1f} ft**. "
-                f"Proceed to Axial Capacity and Lateral Analysis pages for detailed results."
-            )
