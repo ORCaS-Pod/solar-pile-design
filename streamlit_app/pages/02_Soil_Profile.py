@@ -314,6 +314,59 @@ else:
     st.info("No layers defined yet. Add at least one soil layer to proceed.")
 
 # ============================================================================
+# Axial Soil Parameters (separate from lateral)
+# ============================================================================
+st.markdown("---")
+st.subheader("Axial Design Parameters")
+st.caption(
+    "Optional: Define separate axial soil zones with explicit skin friction and "
+    "end bearing values from the geotech report. These depth intervals can differ "
+    "from the lateral soil layers above."
+)
+
+use_axial_zones = st.checkbox(
+    "Use separate axial soil zones",
+    value=bool(st.session_state.get("axial_zones")),
+    key="use_axial_zones",
+)
+
+if use_axial_zones:
+    if not st.session_state.get("axial_zones"):
+        st.session_state["axial_zones"] = [
+            {"top_ft": 0.0, "bottom_ft": 5.0, "f_s_comp_psf": 450.0,
+             "f_s_uplift_psf": 450.0, "q_b_psf": 0.0, "description": "Zone 1"},
+        ]
+
+    axial_df = pd.DataFrame(st.session_state["axial_zones"])
+    col_order = ["top_ft", "bottom_ft", "f_s_comp_psf", "f_s_uplift_psf", "q_b_psf", "description"]
+    for c in col_order:
+        if c not in axial_df.columns:
+            axial_df[c] = 0.0 if c != "description" else ""
+    axial_df = axial_df[col_order]
+
+    edited_axial = st.data_editor(
+        axial_df,
+        column_config={
+            "top_ft": st.column_config.NumberColumn("Top (ft)", format="%.1f", step=0.5),
+            "bottom_ft": st.column_config.NumberColumn("Bottom (ft)", format="%.1f", step=0.5),
+            "f_s_comp_psf": st.column_config.NumberColumn("f_s Comp (psf)", format="%.0f", step=25.0),
+            "f_s_uplift_psf": st.column_config.NumberColumn("f_s Uplift (psf)", format="%.0f", step=25.0),
+            "q_b_psf": st.column_config.NumberColumn("q_b End Bearing (psf)", format="%.0f", step=50.0,
+                                                      help="End bearing at pile tip (only the zone containing the tip is used)"),
+            "description": st.column_config.TextColumn("Description", width="medium"),
+        },
+        num_rows="dynamic",
+        width="stretch",
+        key="axial_zone_editor",
+    )
+    # Sync on button click to avoid double-entry
+    if st.button("Save Axial Zones"):
+        st.session_state["axial_zones"] = edited_axial.to_dict("records")
+        st.success(f"Saved {len(edited_axial)} axial zone(s).")
+else:
+    st.session_state["axial_zones"] = []
+
+# ============================================================================
 # Frost Depth Check
 # ============================================================================
 st.markdown("---")

@@ -10,12 +10,30 @@ import plotly.graph_objects as go
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from core.soil import SoilLayer, SoilProfile, SoilType, build_soil_layer_from_dict
+from core.soil import SoilLayer, SoilProfile, SoilType, AxialSoilZone, build_soil_layer_from_dict
 from core.sections import (
     get_section, get_sections_by_family, list_section_families, corroded_section,
 )
 from core.loads import LoadInput, generate_lrfd_combinations, generate_asd_combinations
 from core.optimization import run_optimization_sweep
+
+
+def _build_axial_zones() -> list[AxialSoilZone] | None:
+    """Build AxialSoilZone list from session state, or None if not used."""
+    raw = st.session_state.get("axial_zones", [])
+    if not raw:
+        return None
+    zones = []
+    for z in raw:
+        zones.append(AxialSoilZone(
+            top_depth_ft=z.get("top_ft", 0.0),
+            bottom_depth_ft=z.get("bottom_ft", 0.0),
+            f_s_comp_psf=z.get("f_s_comp_psf", 0.0),
+            f_s_uplift_psf=z.get("f_s_uplift_psf", 0.0),
+            q_b_psf=z.get("q_b_psf", 0.0),
+            description=z.get("description", ""),
+        ))
+    return zones if zones else None
 
 st.header("Pile Design Optimization")
 st.caption("Sweep section families across embedment depths to find the lightest passing design.")
@@ -173,6 +191,7 @@ if st.button("Run Optimization Sweep", type="primary"):
         frost_depth_in=_frost_in,
         tau_af_psi=_tau_af,
         fy_ksi=_fy_ksi,
+        axial_zones=_build_axial_zones(),
         progress_callback=update_progress,
     )
 
@@ -315,6 +334,7 @@ if "optimization_result" in st.session_state:
             "Lateral DCR": f"{c.lateral_struct_dcr:.2f}" if c.lateral_struct_dcr < 100 else ">100",
             "Defl (in)": f"{c.deflection_in:.3f}" if c.deflection_in < 100 else ">100",
             "Status": "PASS" if c.passes_all else "FAIL",
+            "Governing": c.governing_check if not c.passes_all else "",
         })
 
     df = pd.DataFrame(table_data)

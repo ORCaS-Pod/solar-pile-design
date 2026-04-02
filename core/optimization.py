@@ -12,7 +12,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable
 
-from .soil import SoilProfile
+from .soil import SoilProfile, AxialSoilZone
 from .sections import SteelSection, get_sections_by_family, corroded_section
 from .axial import axial_capacity
 from .lateral import solve_lateral
@@ -138,6 +138,7 @@ def run_optimization_sweep(
     tau_af_psi: float = 10.0,
     FS_lateral: float = 2.0,
     fy_ksi: float = 50.0,
+    axial_zones: list[AxialSoilZone] | None = None,
     progress_callback: Callable[[int, int, str], None] | None = None,
 ) -> OptimizationResult:
     """Sweep all sections in a family across embedment depths.
@@ -251,6 +252,7 @@ def run_optimization_sweep(
                     pile_type=pile_type,
                     FS_compression=FS_compression,
                     FS_tension=FS_tension,
+                    axial_zones=axial_zones,
                 )
                 if design_method == "LRFD":
                     cap_comp = ax.Q_r_compression

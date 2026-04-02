@@ -73,6 +73,25 @@ GAMMA_WATER = 62.4  # pcf
 
 
 @dataclass
+class AxialSoilZone:
+    """Separate axial design zone with explicit skin friction and end bearing.
+
+    Used when the geotech report provides axial parameters at different
+    depth intervals than the lateral soil profile.
+    """
+    top_depth_ft: float
+    bottom_depth_ft: float
+    f_s_comp_psf: float = 0.0        # Skin friction for compression (psf)
+    f_s_uplift_psf: float = 0.0      # Skin friction for uplift (psf)
+    q_b_psf: float = 0.0             # End bearing capacity (psf)
+    description: str = ""
+
+    @property
+    def thickness(self) -> float:
+        return self.bottom_depth_ft - self.top_depth_ft
+
+
+@dataclass
 class SoilLayer:
     """Single soil layer with properties."""
     top_depth: float        # ft (depth below ground surface)

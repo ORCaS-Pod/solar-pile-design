@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from .soil import SoilProfile, SoilLayer, SoilType, GAMMA_WATER
+from .soil import SoilProfile, SoilLayer, SoilType, AxialSoilZone, GAMMA_WATER
 
 
 @dataclass
@@ -84,6 +84,14 @@ def beta_coefficient(
     return K_s * math.tan(math.radians(delta))
 
 
+def _zone_at_depth(zones: list[AxialSoilZone], z: float) -> AxialSoilZone | None:
+    """Return the axial zone containing depth z, or None."""
+    for zone in zones:
+        if zone.top_depth_ft <= z < zone.bottom_depth_ft:
+            return zone
+    return None
+
+
 def axial_capacity(
     profile: SoilProfile,
     pile_perimeter: float,
@@ -95,6 +103,7 @@ def axial_capacity(
     FS_tension: float = 3.0,
     tension_factor: float = 0.75,
     dz: float = 0.5,
+    axial_zones: list[AxialSoilZone] | None = None,
 ) -> AxialResult:
     """Compute axial compression and tension capacity.
 
@@ -141,7 +150,29 @@ def axial_capacity(
         sigma_v = profile.effective_stress_at(z)
         A_s = pile_perimeter * dz * 12.0  # in^2 (perimeter in inches * dz in ft * 12)
 
-        # Check for explicit skin friction values (override correlations)
+        # Check for separate axial zones first (independent depth intervals)
+        if axial_zones:
+            zone = _zone_at_depth(axial_zones, z)
+            if zone is not None:
+                f_s = zone.f_s_comp_psf  # psf
+                f_s_psi = f_s / 144.0
+                dQ = f_s_psi * A_s
+                f_s_up = zone.f_s_uplift_psf if zone.f_s_uplift_psf > 0 else f_s
+                dQ_up = (f_s_up / 144.0) * A_s
+                Q_s_uplift_total += dQ_up
+                has_explicit_uplift = True
+                layer_contributions.append({
+                    "depth_ft": z,
+                    "layer": zone.description or layer.description or layer.soil_type.value,
+                    "method": "Axial Zone",
+                    "f_s_psf": round(f_s, 1),
+                    "f_s_uplift_psf": round(f_s_up, 1),
+                    "dQ_lbs": round(dQ, 0),
+                })
+                Q_s_total += dQ
+                continue
+
+        # Check for explicit skin friction values on the layer (override correlations)
         if layer.f_s_downward is not None:
             f_s = layer.f_s_downward  # psf
             f_s_psi = f_s / 144.0
@@ -233,8 +264,12 @@ def axial_capacity(
     # --- End bearing ---
     tip_layer = profile.layer_at_depth(embedment_depth - 0.01)
     if tip_layer is not None:
-        # Check for explicit end bearing
-        if tip_layer.q_b is not None:
+        # Check axial zones for end bearing first
+        tip_zone = _zone_at_depth(axial_zones or [], embedment_depth - 0.01)
+        if tip_zone is not None and tip_zone.q_b_psf > 0:
+            q_b = tip_zone.q_b_psf  # psf
+            notes.append(f"End bearing: axial zone q_b = {q_b:.0f} psf")
+        elif tip_layer.q_b is not None:
             q_b = tip_layer.q_b  # psf
             notes.append(f"End bearing: explicit q_b = {q_b:.0f} psf")
         else:

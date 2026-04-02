@@ -8,9 +8,27 @@ import pandas as pd
 import plotly.graph_objects as go
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from core.soil import SoilLayer, SoilProfile, SoilType, build_soil_layer_from_dict
+from core.soil import SoilLayer, SoilProfile, SoilType, AxialSoilZone, build_soil_layer_from_dict
 from core.sections import get_section
 from core.axial import axial_capacity
+
+
+def _build_axial_zones() -> list[AxialSoilZone] | None:
+    """Build AxialSoilZone list from session state, or None if not used."""
+    raw = st.session_state.get("axial_zones", [])
+    if not raw:
+        return None
+    zones = []
+    for z in raw:
+        zones.append(AxialSoilZone(
+            top_depth_ft=z.get("top_ft", 0.0),
+            bottom_depth_ft=z.get("bottom_ft", 0.0),
+            f_s_comp_psf=z.get("f_s_comp_psf", 0.0),
+            f_s_uplift_psf=z.get("f_s_uplift_psf", 0.0),
+            q_b_psf=z.get("q_b_psf", 0.0),
+            description=z.get("description", ""),
+        ))
+    return zones if zones else None
 
 st.header("Axial Capacity Analysis")
 
@@ -73,6 +91,7 @@ if st.button("Run Axial Analysis", type="primary"):
         pile_type=st.session_state.pile_type,
         FS_compression=st.session_state.FS_compression,
         FS_tension=st.session_state.FS_tension,
+        axial_zones=_build_axial_zones(),
     )
 
     st.session_state["axial_result"] = result
