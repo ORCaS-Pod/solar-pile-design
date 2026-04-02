@@ -264,7 +264,7 @@ if "optimization_result" in st.session_state:
              f"{o.deflection_in:.3f} in / {_defl_limit:.2f} in",
              "PASS" if o.passes_deflection else "FAIL"],
         ]
-        if _frost_in > 0:
+        if o.adfreeze_force_lbs > 0 or o.frost_min_embed_ft > 0:
             if o.passes_frost:
                 _frost_status = "PASS"
             elif adfreeze_hard_fail:
